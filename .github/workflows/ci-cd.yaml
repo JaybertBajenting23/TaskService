@@ -1,3 +1,62 @@
+#For Production Ready
+name: .NET Build and Test
+
+# Trigger configuration
+on:
+  push:
+    branches: 
+      - master
+      - main
+  pull_request:
+    branches: 
+      - master
+      - main
+
+# Environment variables (equivalent to Azure DevOps variables)
+env:
+  BUILD_CONFIGURATION: 'Release'
+  DOTNET_VERSION: '6.0.x'
+
+# Jobs (equivalent to Azure DevOps stages/jobs)
+jobs:
+  build-and-test:
+    name: 'Build and Test'
+    runs-on: ubuntu-latest
+    
+    steps:
+    # Setup .NET SDK
+    - name: 'Checkout code'
+      uses: actions/checkout@v4
+      
+    - name: 'Setup .NET SDK'
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        
+    # Restore NuGet packages
+    - name: 'Restore NuGet Packages'
+      run: dotnet restore
+      
+    # Build solution
+    - name: 'Build Solution'
+      run: dotnet build --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore --no-incremental
+      
+    # Run tests
+    - name: 'Run Unit Tests'
+      run: dotnet test --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --verbosity normal --logger trx --results-directory "TestResults"
+      
+    # Upload test results (equivalent to publishTestResults)
+    - name: 'Upload Test Results'
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results
+        path: TestResults/*.trx
+
+
+
+
+# For Practice
 # name: Practice Workflow
 
 # on:
@@ -26,29 +85,90 @@
 
 
 
-name: Practice Workflow
 
-trigger:
-- master
 
-pool:
-  vmImage: 'ubuntu-latest'
+# For Learning
+# name: Practice Workflow
 
-steps:
-- task: UseDotNet@2
-  displayName: 'Setup .NET'
-  inputs:
-    version: '6.0.x'
 
-- task: DotNetCoreCLI@2
-  displayName: 'Restore dependencies'
-  inputs:
-    command: 'restore'
+# trigger:
+#   - master
 
-- task: DotNetCoreCLI@2
-  displayName: 'Build'
-  inputs:
-    command: 'build'
-    arguments: '--no-restore'
+# pool:
+#   vmImage: 'ubuntu-latest'
 
-    
+# steps:
+#   - task: UseDotNet@2
+#     displayName: 'Setup. NET'
+#     inputs:
+#       version: '6.0.x'
+  
+#   - task: DotNetCoreCli@2
+#     displayName: 'Restore Dependencies'
+#     inputs:
+#       command: 'restore'
+
+#   - task: DotNetCoreCli@2
+#     displayName: 'Build'
+#     inputs:
+#       command: 'build'
+#       arguments: '--no-restore'
+
+#   - task: DotNetCoreCli@2
+#     displayName: 'Run Tests'
+#     inputs:
+#       command: 'test'
+#       projects: '**/*Tests.csproj'
+  
+  
+# Production Ready
+
+# name: $(Date:yyyyMMdd)$(Rev:.r) # Auto-incrementing build number format
+
+# trigger:
+#   branches:
+#     include:
+#     - master
+#     - main # Adding main as it's a common default branch
+
+# variables:
+#   buildConfiguration: 'Release' # Configurable build type
+#   dotnetVersion: '6.0.x'       # Centralized .NET version
+
+# pool:
+#   vmImage: 'ubuntu-latest'
+
+# stages:
+# - stage: Build
+#   displayName: 'Build and Test'
+#   jobs:
+#   - job: Build_Job
+#     displayName: 'Build Job'
+#     steps:
+#     - task: UseDotNet@2
+#       displayName: 'Install .NET SDK'
+#       inputs:
+#         version: $(dotnetVersion)
+#         performMultiLevelLookup: true
+
+#     - task: DotNetCoreCLI@2
+#       displayName: 'Restore NuGet Packages'
+#       inputs:
+#         command: 'restore'
+#         feedsToUse: 'select' # Explicit feed selection
+#         includeNuGetOrg: true
+
+#     - task: DotNetCoreCLI@2
+#       displayName: 'Build Solution'
+#       inputs:
+#         command: 'build'
+#         arguments: '--configuration $(buildConfiguration) --no-restore --no-incremental'
+#         projects: '**/*.sln' # Builds all solutions
+
+#     - task: DotNetCoreCLI@2
+#       displayName: 'Run Unit Tests'
+#       inputs:
+#         command: 'test'
+#         arguments: '--configuration $(buildConfiguration) --no-build --verbosity normal'
+#         projects: '**/*Tests.csproj'
+#         publishTestResults: true # Publishes test results to Azure DevOps
